@@ -96,7 +96,8 @@ class CoreDataManager {
     }
     
     // MARK: - Core Data Save Context
-    private func saveContext() {
+    // it should br private but currently edti vc is accessing this ... i will fix this .... maybe....
+    func saveContext() {
         do {
             try context.save()
         } catch {

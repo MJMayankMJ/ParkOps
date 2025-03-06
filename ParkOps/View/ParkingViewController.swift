@@ -6,7 +6,6 @@
 //
 
 import UIKit
-import CoreData
 
 class ParkingViewController: UIViewController {
 
@@ -18,12 +17,20 @@ class ParkingViewController: UIViewController {
     @IBOutlet weak var durationTextField: UITextField!
     @IBOutlet weak var vehicleNumberTextField: UITextField!
     
+    let viewModel = ParkingViewModel()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
         checkAndAskForTotalSlots()
+        //updateSlotCounts()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         updateSlotCounts()
     }
+
     
     // MARK: - Navigation Bar Setup
     func setupNavigationBar() {
@@ -33,11 +40,8 @@ class ParkingViewController: UIViewController {
     
     // MARK: - Update Slot Counts
     func updateSlotCounts() {
-        let availableSlots = CoreDataManager.shared.availableSlots
-        let occupiedSlots = CoreDataManager.shared.occupiedSlots
-        
-        availableSlotsLabel.text = "\(availableSlots)"
-        occupiedSlotsLabel.text = "\(occupiedSlots)"
+        availableSlotsLabel.text = "\(viewModel.availableSlots)"
+        occupiedSlotsLabel.text = "\(viewModel.occupiedSlots)"
     }
     
     // MARK: - Edit Total Slots
@@ -45,12 +49,12 @@ class ParkingViewController: UIViewController {
         let alert = UIAlertController(title: "Edit Total Slots", message: "Enter new total slots", preferredStyle: .alert)
         alert.addTextField { textField in
             textField.keyboardType = .numberPad
-            textField.text = "\(CoreDataManager.shared.fetchTotalSlots() ?? 0)"
+            textField.text = "\(self.viewModel.fetchTotalSlots() ?? 0)"
         }
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
             if let text = alert.textFields?.first?.text, let newTotalSlots = Int16(text) {
-                CoreDataManager.shared.setTotalSlots(newTotalSlots)
+                self.viewModel.setTotalSlots(newTotalSlots)
                 self.updateSlotCounts()
             }
         }
@@ -71,14 +75,7 @@ class ParkingViewController: UIViewController {
             return
         }
 
-        CoreDataManager.shared.addParkingSlot(
-            name: driverName,
-            slotNumber: slotNumber,
-            timeDurationInHour: duration,
-            startingTime: Date(),
-            vehicleNumber: vehicleNumber
-        )
-        
+        viewModel.addParkingSlot(name: driverName, slotNumber: slotNumber, timeDurationInHour: duration, vehicleNumber: vehicleNumber)
         updateSlotCounts()
         clearTextFields()
     }
@@ -89,7 +86,7 @@ class ParkingViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-
+    
     func clearTextFields() {
         driverNameTextField.text = ""
         slotNumberTextField.text = ""
@@ -98,9 +95,7 @@ class ParkingViewController: UIViewController {
     }
     
     func checkAndAskForTotalSlots() {
-        let totalSlots = CoreDataManager.shared.fetchTotalSlots() ?? 0
-        
-        if totalSlots == 0 {
+        if viewModel.fetchTotalSlots() == 0 {
             let alert = UIAlertController(title: "Set Total Slots", message: "Enter the total number of parking slots available.", preferredStyle: .alert)
             
             alert.addTextField { textField in
@@ -109,20 +104,19 @@ class ParkingViewController: UIViewController {
             
             let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
                 if let text = alert.textFields?.first?.text, let newTotalSlots = Int16(text), newTotalSlots > 0 {
-                    CoreDataManager.shared.setTotalSlots(newTotalSlots)
+                    self.viewModel.setTotalSlots(newTotalSlots)
                     self.updateSlotCounts()
                 } else {
-                    self.checkAndAskForTotalSlots() // Show alert again if input is invalid
+                    self.checkAndAskForTotalSlots()
                 }
             }
             
             alert.addAction(saveAction)
             alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
-                self.checkAndAskForTotalSlots() // Force user to enter a value
+                self.checkAndAskForTotalSlots()
             }))
             
             present(alert, animated: true)
         }
     }
-
 }
