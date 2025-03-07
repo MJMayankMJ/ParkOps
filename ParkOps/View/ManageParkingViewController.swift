@@ -29,8 +29,16 @@ class ManageParkingViewController: UIViewController, UITableViewDelegate {
     }
     
     func fetchParkingSlots() {
-        parkingSlots = CoreDataManager.shared.fetchAllParkingSlots().sorted(by: { $0.slotNumber < $1.slotNumber })
+        parkingSlots = CoreDataManager.shared.fetchAllParkingSlots().sorted {
+            sortAlphanumeric($0.slotNumber, $1.slotNumber)
+        }
         tableView.reloadData()
+    }
+
+
+    
+    func sortAlphanumeric(_ slot1: String, _ slot2: String) -> Bool {
+        return slot1.localizedStandardCompare(slot2) == .orderedAscending
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -103,6 +111,6 @@ extension ManageParkingViewController: EditSlotDelegate {
     
     func didDeleteSlot(_ slot: ParkingSlotData) {
         CoreDataManager.shared.deleteParkingSlot(slot: slot)
-           fetchParkingSlots() // Refresh the table view to reflect deletion
-       }
+        fetchParkingSlots() // Refresh the table view to reflect deletion
+    }
 }

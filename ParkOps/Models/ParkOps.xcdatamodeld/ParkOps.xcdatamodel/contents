@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D70" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="ParkingSlot" representedClassName="ParkingSlot" syncable="YES">
-        <attribute name="totalSlots" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalFloors" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="totalSlotsPerFloor" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="slots" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ParkingSlotData" inverseName="parkingSlot" inverseEntity="ParkingSlotData"/>
     </entity>
     <entity name="ParkingSlotData" representedClassName="ParkingSlotData" syncable="YES">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
         <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="slotNumber" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="slotNumber" optional="YES" attributeType="String"/>
         <attribute name="startingTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="timeDurationInHour" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="vehicleNumber" optional="YES" attributeType="String"/>

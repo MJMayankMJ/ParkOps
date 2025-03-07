@@ -16,7 +16,8 @@ extension ParkingSlot {
         return NSFetchRequest<ParkingSlot>(entityName: "ParkingSlot")
     }
 
-    @NSManaged public var totalSlots: Int16
+    @NSManaged public var totalSlotsPerFloor: Int16
+    @NSManaged public var totalFloors: Int16
     @NSManaged public var slots: NSSet?
 
 }

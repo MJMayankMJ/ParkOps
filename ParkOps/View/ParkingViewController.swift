@@ -22,8 +22,7 @@ class ParkingViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
-        checkAndAskForTotalSlots()
-        //updateSlotCounts()
+        checkAndShowSetupScreen()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -31,62 +30,82 @@ class ParkingViewController: UIViewController {
         updateSlotCounts()
     }
 
-    
     // MARK: - Navigation Bar Setup
     func setupNavigationBar() {
-        let editButton = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editTotalSlots))
+        let editButton = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editParkingSetup))
         navigationItem.rightBarButtonItem = editButton
     }
-    
+
     // MARK: - Update Slot Counts
     func updateSlotCounts() {
         availableSlotsLabel.text = "\(viewModel.availableSlots)"
         occupiedSlotsLabel.text = "\(viewModel.occupiedSlots)"
     }
-    
-    // MARK: - Edit Total Slots
-    @objc func editTotalSlots() {
-        let alert = UIAlertController(title: "Edit Total Slots", message: "Enter new total slots", preferredStyle: .alert)
-        alert.addTextField { textField in
-            textField.keyboardType = .numberPad
-            textField.text = "\(self.viewModel.fetchTotalSlots() ?? 0)"
+
+    // MARK: - Edit Parking Setup (Bottom Sheet)
+    @objc func editParkingSetup() {
+        let setupVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SetupParkingViewController") as! SetupParkingViewController
+        setupVC.delegate = self
+        setupVC.modalPresentationStyle = .pageSheet
+        
+        if let sheet = setupVC.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
         }
         
-        let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-            if let text = alert.textFields?.first?.text, let newTotalSlots = Int16(text) {
-                self.viewModel.setTotalSlots(newTotalSlots)
-                self.updateSlotCounts()
-            }
-        }
-        
-        alert.addAction(saveAction)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        
-        present(alert, animated: true)
+        present(setupVC, animated: true)
     }
-    
+
     // MARK: - Log New Parking Entry
     @IBAction func logEntryTapped(_ sender: UIButton) {
-        guard let driverName = driverNameTextField.text, !driverName.isEmpty,
-              let slotNumberText = slotNumberTextField.text, let slotNumber = Int16(slotNumberText),
-              let durationText = durationTextField.text, let duration = Int16(durationText),
-              let vehicleNumber = vehicleNumberTextField.text, !vehicleNumber.isEmpty else {
-            showAlert(message: "Please fill all fields correctly.")
+        let totalFloors = viewModel.fetchTotalFloors() ?? 0
+        let slotsPerFloor = viewModel.fetchTotalSlotsPerFloor() ?? 0
+        
+        if let error = InputValidator.validateDriverName(driverNameTextField.text) {
+            showAlert(message: error)
+            return
+        }
+        let (formattedSlotNumber, slotError) = InputValidator.validateAndFormatSlotNumber(slotNumberTextField.text, totalFloors: totalFloors, slotsPerFloor: slotsPerFloor)
+        if let error = slotError {
+            showAlert(message: error)
             return
         }
 
-        viewModel.addParkingSlot(name: driverName, slotNumber: slotNumber, timeDurationInHour: duration, vehicleNumber: vehicleNumber)
+        if let error = InputValidator.validateTimeDuration(durationTextField.text) {
+            showAlert(message: error)
+            return
+        }
+        guard let duration = Int16(durationTextField.text ?? ""), duration > 0 else {
+            showAlert(message: "Please enter a valid time duration.")
+            return
+        }
+        if let error = InputValidator.validateVehicleNumber(vehicleNumberTextField.text) {
+            showAlert(message: error)
+            return
+        }
+        guard let validSlotNumber = formattedSlotNumber else {
+            showAlert(message: "Invalid slot number.")
+            return
+        }
+
+        viewModel.addParkingSlot(
+            name: driverNameTextField.text ?? "",
+            slotNumber: validSlotNumber,
+            timeDurationInHour: duration,
+            vehicleNumber: vehicleNumberTextField.text ?? ""
+        )
+
         updateSlotCounts()
         clearTextFields()
     }
-    
+
     // MARK: - Helper Methods
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-    
+
     func clearTextFields() {
         driverNameTextField.text = ""
         slotNumberTextField.text = ""
@@ -94,29 +113,25 @@ class ParkingViewController: UIViewController {
         vehicleNumberTextField.text = ""
     }
     
-    func checkAndAskForTotalSlots() {
-        if viewModel.fetchTotalSlots() == 0 {
-            let alert = UIAlertController(title: "Set Total Slots", message: "Enter the total number of parking slots available.", preferredStyle: .alert)
-            
-            alert.addTextField { textField in
-                textField.keyboardType = .numberPad
-            }
-            
-            let saveAction = UIAlertAction(title: "Save", style: .default) { _ in
-                if let text = alert.textFields?.first?.text, let newTotalSlots = Int16(text), newTotalSlots > 0 {
-                    self.viewModel.setTotalSlots(newTotalSlots)
-                    self.updateSlotCounts()
-                } else {
-                    self.checkAndAskForTotalSlots()
-                }
-            }
-            
-            alert.addAction(saveAction)
-            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: { _ in
-                self.checkAndAskForTotalSlots()
-            }))
-            
-            present(alert, animated: true)
+    // MARK: - Check and Show Setup Screen if Needed
+    private func checkAndShowSetupScreen() {
+        let totalFloors = CoreDataManager.shared.fetchTotalFloors() ?? 0
+        let slotsPerFloor = CoreDataManager.shared.fetchTotalSlotsPerFloor() ?? 0
+
+        if totalFloors == 0 || slotsPerFloor == 0 {
+            let setupVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SetupParkingViewController") as! SetupParkingViewController
+            setupVC.delegate = self
+            setupVC.modalPresentationStyle = .fullScreen
+            present(setupVC, animated: true)
         }
+    }
+}
+
+// MARK: - SetupParkingDelegate Implementation
+extension ParkingViewController: SetupParkingDelegate {
+    func didSaveParkingConfiguration(totalFloors: Int16, slotsPerFloor: Int16) {
+        viewModel.setTotalFloors(totalFloors)
+        viewModel.setTotalSlotsPerFloor(slotsPerFloor)
+        updateSlotCounts()
     }
 }
