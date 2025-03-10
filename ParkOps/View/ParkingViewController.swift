@@ -29,19 +29,19 @@ class ParkingViewController: UIViewController {
         super.viewWillAppear(animated)
         updateSlotCounts()
     }
-
+    
     // MARK: - Navigation Bar Setup
     func setupNavigationBar() {
         let editButton = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editParkingSetup))
         navigationItem.rightBarButtonItem = editButton
     }
-
+    
     // MARK: - Update Slot Counts
     func updateSlotCounts() {
         availableSlotsLabel.text = "\(viewModel.availableSlots)"
         occupiedSlotsLabel.text = "\(viewModel.occupiedSlots)"
     }
-
+    
     // MARK: - Edit Parking Setup (Bottom Sheet)
     @objc func editParkingSetup() {
         let setupVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "SetupParkingViewController") as! SetupParkingViewController
@@ -55,7 +55,7 @@ class ParkingViewController: UIViewController {
         
         present(setupVC, animated: true)
     }
-
+    
     // MARK: - Log New Parking Entry
     @IBAction func logEntryTapped(_ sender: UIButton) {
         let totalFloors = viewModel.fetchTotalFloors() ?? 0
@@ -65,12 +65,13 @@ class ParkingViewController: UIViewController {
             showAlert(message: error)
             return
         }
+        
         let (formattedSlotNumber, slotError) = InputValidator.validateAndFormatSlotNumber(slotNumberTextField.text, totalFloors: totalFloors, slotsPerFloor: slotsPerFloor)
         if let error = slotError {
             showAlert(message: error)
             return
         }
-
+        
         if let error = InputValidator.validateTimeDuration(durationTextField.text) {
             showAlert(message: error)
             return
@@ -87,25 +88,31 @@ class ParkingViewController: UIViewController {
             showAlert(message: "Invalid slot number.")
             return
         }
-
+        
         viewModel.addParkingSlot(
             name: driverNameTextField.text ?? "",
             slotNumber: validSlotNumber,
             timeDurationInHour: duration,
             vehicleNumber: vehicleNumberTextField.text ?? ""
-        )
-
-        updateSlotCounts()
-        clearTextFields()
+        ) { errorMessage in
+            DispatchQueue.main.async {
+                if let error = errorMessage {
+                    self.showAlert(message: error)
+                } else {
+                    self.updateSlotCounts()
+                    self.clearTextFields()
+                }
+            }
+        }
     }
-
+    
     // MARK: - Helper Methods
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
     }
-
+    
     func clearTextFields() {
         driverNameTextField.text = ""
         slotNumberTextField.text = ""
@@ -127,7 +134,7 @@ class ParkingViewController: UIViewController {
     }
 }
 
-// MARK: - SetupParkingDelegate Implementation
+ //MARK: - SetupParkingDelegate Implementation
 extension ParkingViewController: SetupParkingDelegate {
     func didSaveParkingConfiguration(totalFloors: Int16, slotsPerFloor: Int16) {
         viewModel.setTotalFloors(totalFloors)
