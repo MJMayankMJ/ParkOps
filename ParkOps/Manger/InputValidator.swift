@@ -17,34 +17,43 @@ class InputValidator {
     }
     
     static func validateAndFormatSlotNumber(_ slotNumber: String?, totalFloors: Int16, slotsPerFloor: Int16) -> (String?, String?) {
-        guard let slotNumber = slotNumber, !slotNumber.isEmpty else {
-            return (nil, "Slot number cannot be empty.")
+            guard let slotNumber = slotNumber, !slotNumber.isEmpty else {
+                return (nil, "Slot number cannot be empty.")
+            }
+            
+            let pattern = "^[A-Za-z][0-9]+$"
+            let regex = try! NSRegularExpression(pattern: pattern, options: [])
+            let range = NSRange(location: 0, length: slotNumber.utf16.count)
+            
+            if regex.firstMatch(in: slotNumber, options: [], range: range) == nil {
+                return (nil, "Invalid slot format. Example: A10 (Floor A, Slot 10).")
+            }
+            
+            // Convert first letter to uppercase for consistency
+            let formattedSlotNumber = slotNumber.prefix(1).uppercased() + slotNumber.dropFirst()
+            let floorChar = formattedSlotNumber.prefix(1)
+            let floorIndex = Int(floorChar.unicodeScalars.first!.value) - Int("A".unicodeScalars.first!.value) + 1
+            
+            if floorIndex < 1 || floorIndex > totalFloors {
+                let lastFloor = Character(UnicodeScalar(Int("A".unicodeScalars.first!.value) + Int(totalFloors) - 1)!)
+                return (nil, "Invalid floor. Available floors: A-\(lastFloor).")
+            }
+            
+            let slotPart = String(formattedSlotNumber.dropFirst())
+            if let slotValue = Int(slotPart), slotValue < 1 || slotValue > slotsPerFloor {
+                return (nil, "Invalid slot number. Available slots: 1-\(slotsPerFloor) per floor.")
+            }
+            
+            // Check if the slot is already booked
+            let existingSlot = CoreDataManager.shared.fetchAllParkingSlots().first {
+                $0.slotNumber.uppercased() == formattedSlotNumber.uppercased()
+            }
+            if existingSlot != nil {
+                return (nil, "Slot \(formattedSlotNumber) is already booked.")
+            }
+            
+            return (formattedSlotNumber, nil)
         }
-
-        let pattern = "^[A-Za-z][0-9]+$"
-        let regex = try! NSRegularExpression(pattern: pattern, options: [])
-        let range = NSRange(location: 0, length: slotNumber.utf16.count)
-
-        if regex.firstMatch(in: slotNumber, options: [], range: range) == nil {
-            return (nil, "Invalid slot format. Example: A10 (Floor A, Slot 10).")
-        }
-        
-        let formattedSlotNumber = slotNumber.prefix(1).uppercased() + slotNumber.dropFirst() // Convert first letter to uppercase
-        let floorChar = formattedSlotNumber.prefix(1)
-        let floorIndex = Int(floorChar.unicodeScalars.first!.value) - Int("A".unicodeScalars.first!.value) + 1
-        
-        if floorIndex < 1 || floorIndex > totalFloors {
-            let lastFloor = Character(UnicodeScalar(Int("A".unicodeScalars.first!.value) + Int(totalFloors) - 1)!)
-            return (nil, "Invalid floor. Available floors: A-\(lastFloor).")
-        }
-
-        let slotPart = String(formattedSlotNumber.dropFirst()) // Extract slot number
-        if let slotValue = Int(slotPart), slotValue < 1 || slotValue > slotsPerFloor {
-            return (nil, "Invalid slot number. Available slots: 1-\(slotsPerFloor) per floor.")
-        }
-        
-        return (formattedSlotNumber, nil)  // Return formatted slot number
-    }
 
     
     static func validateTimeDuration(_ duration: String?) -> String? {
@@ -62,7 +71,7 @@ class InputValidator {
     }
     
     static func validateStartingTime(_ date: Date?) -> String? {
-        guard let date = date else {
+        guard date != nil else {
             return "Starting time must be selected."
         }
         return nil

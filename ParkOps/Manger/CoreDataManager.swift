@@ -86,22 +86,16 @@ class CoreDataManager {
     
     // Update total slots per floor.
     func setTotalSlotsPerFloor(_ newTotal: Int16) {
-        // Update configuration.
         updateTotalSlotsPerFloor(newTotal: newTotal)
-        // Fetch the current total floors.
         if let currentFloors = fetchTotalFloors() {
-            // Delete slots that are out-of-range based on the new slots per floor.
             deleteOutOfRangeSlots(totalFloors: currentFloors, slotsPerFloor: newTotal)
         }
     }
     
     // Update total floors.
     func setTotalFloors(_ newTotal: Int16) {
-        // Update configuration.
         updateTotalFloors(newTotal: newTotal)
-        // Fetch the current slots per floor.
         if let currentSlots = fetchTotalSlotsPerFloor() {
-            // Delete slots that are out-of-range based on the new total floors.
             deleteOutOfRangeSlots(totalFloors: newTotal, slotsPerFloor: currentSlots)
         }
     }
@@ -172,4 +166,35 @@ class CoreDataManager {
             print("Failed to save context: \(error)")
         }
     }
+    
+    //MARK: - Delete all / RESET
+    func deleteAllParkingSlots() {
+        let context = persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: "ParkingSlotData")
+        
+        let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+        
+        do {
+            try context.execute(deleteRequest)
+            try context.save()
+        } catch {
+            print("Error deleting all slots: \(error)")
+        }
+    }
+    
+    func resetParkingConfiguration() {
+        let context = persistentContainer.viewContext
+        let fetchRequest: NSFetchRequest<ParkingSlot> = ParkingSlot.fetchRequest()
+
+        do {
+            if let parkingSlot = try context.fetch(fetchRequest).first {
+                parkingSlot.totalFloors = 0
+                parkingSlot.totalSlotsPerFloor = 0
+                try context.save()
+            }
+        } catch {
+            print("Error resetting parking configuration: \(error)")
+        }
+    }
+
 }

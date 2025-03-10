@@ -40,6 +40,12 @@ class ParkingViewModel {
         completion(nil)
     }
     
+    func clearAllParkingData() {
+        CoreDataManager.shared.deleteAllParkingSlots()
+        CoreDataManager.shared.resetParkingConfiguration()
+    }
+    
+    
     // Returns the maximum required number of floors based on occupied slots.
     // For example, if an occupied slot is "H10", then maxRequiredFloors() returns 8 (since H is the 8th letter).
     func maxRequiredFloors() -> Int16 {
@@ -69,4 +75,6 @@ class ParkingViewModel {
         }
         return maxSlot
     }
+
+    
 }

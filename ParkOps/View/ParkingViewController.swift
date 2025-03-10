@@ -32,9 +32,24 @@ class ParkingViewController: UIViewController {
     
     // MARK: - Navigation Bar Setup
     func setupNavigationBar() {
+        // Right bar button for editing
         let editButton = UIBarButtonItem(title: "Edit", style: .plain, target: self, action: #selector(editParkingSetup))
         navigationItem.rightBarButtonItem = editButton
+
+        // Create the custom "Clear All Data" UIButton
+        let clearAllButton: UIButton = {
+            let button = UIButton(type: .system)
+            button.setTitle("Clear All Data", for: .normal)
+            button.setTitleColor(.red, for: .normal)
+            button.addTarget(self, action: #selector(clearAllDataTapped), for: .touchUpInside)
+            return button
+        }()
+
+        // Wrap the UIButton in a UIBarButtonItem
+        let clearAllBarButtonItem = UIBarButtonItem(customView: clearAllButton)
+        navigationItem.leftBarButtonItem = clearAllBarButtonItem
     }
+
     
     // MARK: - Update Slot Counts
     func updateSlotCounts() {
@@ -56,6 +71,20 @@ class ParkingViewController: UIViewController {
         present(setupVC, animated: true)
     }
     
+    @objc private func clearAllDataTapped() {
+        let alert = UIAlertController(title: "Clear All Data?", message: "This will delete all parking slots and reset floors and slots per floor. This action cannot be undone.", preferredStyle: .alert)
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: "Clear", style: .destructive, handler: { _ in
+            self.viewModel.clearAllParkingData()
+            DispatchQueue.main.async {
+                self.updateSlotCounts()
+                self.editParkingSetup()
+            }
+        }))
+
+        present(alert, animated: true, completion: nil)
+    }
     // MARK: - Log New Parking Entry
     @IBAction func logEntryTapped(_ sender: UIButton) {
         let totalFloors = viewModel.fetchTotalFloors() ?? 0
