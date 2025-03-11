@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import CoreData
 
 class ParkingViewController: UIViewController {
 
@@ -23,6 +24,9 @@ class ParkingViewController: UIViewController {
         super.viewDidLoad()
         setupNavigationBar()
         checkAndShowSetupScreen()
+        DispatchQueue.main.async {
+            self.createDummyDataIfNeeded()
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -170,4 +174,50 @@ extension ParkingViewController: SetupParkingDelegate {
         viewModel.setTotalSlotsPerFloor(slotsPerFloor)
         updateSlotCounts()
     }
+}
+
+extension ParkingViewController {
+    func createDummyDataIfNeeded() {
+        let context = CoreDataManager.shared.context
+        let fetchRequest: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "transactionStatus == %@", "pending") // Filter only pending records
+        
+        do {
+            let existingPendingRecords = try context.fetch(fetchRequest)
+            
+            // If there are already pending records, do not create new dummy data
+            if !existingPendingRecords.isEmpty {
+                print("Pending transactions already exist. Skipping dummy data creation.")
+                return
+            }
+            
+            print("No pending transactions found. Creating dummy data...")
+            
+            // Create 10 dummy records
+            for i in 1...10 {
+                let slot = ParkingSlotData(context: context)
+                
+                // Assign basic details
+                slot.id = UUID()
+                slot.name = "Driver \(i)"
+                slot.slotNumber = "A\(i)"  // Example slot format: A1, A2, ...
+                slot.timeDurationInHour = Int16(2 + i)  // Example duration
+                slot.startingTime = Date()  // Current date/time
+                slot.vehicleNumber = "ABC-123\(i)"
+                
+                // Set transaction fields: pending status, and payment flag true for first 5, false for last 5
+                slot.transactionStatus = "pending"
+                slot.isPaymentDone = (i <= 5)
+            }
+            
+            // Save context
+            try context.save()
+            print("Dummy data created successfully!")
+            
+        } catch {
+            context.rollback()
+            print("Error checking or creating dummy data: \(error)")
+        }
+    }
+
 }

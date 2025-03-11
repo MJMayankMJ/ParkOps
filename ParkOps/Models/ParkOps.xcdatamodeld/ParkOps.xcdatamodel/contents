@@ -7,10 +7,12 @@
     </entity>
     <entity name="ParkingSlotData" representedClassName="ParkingSlotData" syncable="YES">
         <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isPaymentDone" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="slotNumber" optional="YES" attributeType="String"/>
         <attribute name="startingTime" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="timeDurationInHour" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="transactionStatus" optional="YES" attributeType="String"/>
         <attribute name="vehicleNumber" optional="YES" attributeType="String"/>
         <relationship name="parkingSlot" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ParkingSlot" inverseName="slots" inverseEntity="ParkingSlot"/>
     </entity>

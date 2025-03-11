@@ -29,17 +29,58 @@ class CoreDataManager {
     func fetchAllParkingSlots() -> [ParkingSlotData] {
         let fetchRequest: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
         do {
-            return try context.fetch(fetchRequest).sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+            let results = try context.fetch(fetchRequest)
+            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
         } catch {
             print("Failed to fetch parking slots: \(error)")
             return []
         }
     }
     
+    // eg: fetch slots for "Transaction Management"
+    // showing anything that is NOT (approved && paid)
+    func fetchSlotsForTransactionManagement() -> [ParkingSlotData] {
+        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "transactionStatus != %@", "approved"),
+            NSPredicate(format: "isPaymentDone == NO")
+        ])
+        request.predicate = predicate
+        
+        do {
+            let results = try context.fetch(request)
+            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+        } catch {
+            print("Failed to fetch transaction management slots: \(error)")
+            return []
+        }
+    }
+    
+    // eg: fetch slots for "Manage Slots"
+    // showing only (approved && paid).
+    func fetchSlotsForManageSlots() -> [ParkingSlotData] {
+        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "transactionStatus == %@", "approved"),
+            NSPredicate(format: "isPaymentDone == YES")
+        ])
+        request.predicate = predicate
+        
+        do {
+            let results = try context.fetch(request)
+            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+        } catch {
+            print("Failed to fetch manage slots: \(error)")
+            return []
+        }
+    }
+    
+    // Helper to compare alphanumeric slot numbers (e.g. A10 < B5).
     private func compareSlotNumbers(_ slot1: String?, _ slot2: String?) -> Bool {
         guard let slot1 = slot1, let slot2 = slot2 else { return false }
         let floor1 = String(slot1.prefix(1))
         let floor2 = String(slot2.prefix(1))
+        
         if floor1 == floor2 {
             let num1 = Int(slot1.dropFirst()) ?? 0
             let num2 = Int(slot2.dropFirst()) ?? 0
@@ -48,11 +89,13 @@ class CoreDataManager {
         return floor1 < floor2
     }
     
+    // Delete a single ParkingSlotData
     func deleteParkingSlot(slot: ParkingSlotData) {
         context.delete(slot)
         saveContext()
     }
     
+    // Convenience to remove by slot number
     func removeParkingSlot(bySlotNumber slotNumber: String) {
         let allSlots = fetchAllParkingSlots()
         if let slot = allSlots.first(where: { $0.slotNumber == slotNumber }) {
@@ -84,7 +127,7 @@ class CoreDataManager {
         }
     }
     
-    // Update total slots per floor.
+    // Update total slots per floor, then delete out-of-range data
     func setTotalSlotsPerFloor(_ newTotal: Int16) {
         updateTotalSlotsPerFloor(newTotal: newTotal)
         if let currentFloors = fetchTotalFloors() {
@@ -92,7 +135,7 @@ class CoreDataManager {
         }
     }
     
-    // Update total floors.
+    // Update total floors, then delete out-of-range data
     func setTotalFloors(_ newTotal: Int16) {
         updateTotalFloors(newTotal: newTotal)
         if let currentSlots = fetchTotalSlotsPerFloor() {
@@ -100,7 +143,6 @@ class CoreDataManager {
         }
     }
     
-    // Helper methods for updating the configuration.
     private func updateTotalSlotsPerFloor(newTotal: Int16) {
         let fetchRequest: NSFetchRequest<ParkingSlot> = ParkingSlot.fetchRequest()
         do {
@@ -133,24 +175,27 @@ class CoreDataManager {
         }
     }
     
-    // Consolidated method to delete parking slots that are out-of-range.
+    // Delete any slot whose floor/slotNumber is out of current config
     func deleteOutOfRangeSlots(totalFloors: Int16, slotsPerFloor: Int16) {
         let allSlots = fetchAllParkingSlots()
         let allowedFloors = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZ".prefix(Int(totalFloors)))
         for slot in allSlots {
             let slotStr = slot.slotNumber
             let floor = String(slotStr.prefix(1)).uppercased()
-            let slotNumber = Int(slotStr.dropFirst()) ?? 0
-            if !allowedFloors.contains(floor) || slotNumber > Int(slotsPerFloor) {
+            let slotNum = Int(slotStr.dropFirst()) ?? 0
+            
+            if !allowedFloors.contains(floor) || slotNum > Int(slotsPerFloor) {
                 deleteParkingSlot(slot: slot)
             }
         }
     }
     
+    // Count how many are occupied
     var occupiedSlots: Int16 {
         return Int16(fetchAllParkingSlots().count)
     }
     
+    // Calculate available based on total floors/slots minus occupied
     var availableSlots: Int16 {
         if let totalSlots = fetchTotalSlotsPerFloor(), let totalFloors = fetchTotalFloors() {
             return (totalSlots * totalFloors) - occupiedSlots
@@ -158,6 +203,7 @@ class CoreDataManager {
         return 0
     }
     
+    // Save context
     func saveContext() {
         do {
             try context.save()
@@ -167,7 +213,7 @@ class CoreDataManager {
         }
     }
     
-    //MARK: - Delete all / RESET
+    // MARK: - Delete All / Reset
     func deleteAllParkingSlots() {
         let context = persistentContainer.viewContext
         let fetchRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: "ParkingSlotData")
@@ -196,5 +242,4 @@ class CoreDataManager {
             print("Error resetting parking configuration: \(error)")
         }
     }
-
 }

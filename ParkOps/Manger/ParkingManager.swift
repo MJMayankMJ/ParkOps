@@ -13,7 +13,13 @@ class ParkingManager {
     
     private init() {}
     
-    func addParkingSlot(name: String,slotNumber: String,timeDurationInHour: Int16,startingTime: Date,vehicleNumber: String) {
+    // Create a new parking slot with default transaction fields.
+    func addParkingSlot(name: String,
+                        slotNumber: String,
+                        timeDurationInHour: Int16,
+                        startingTime: Date,
+                        vehicleNumber: String) {
+        
         guard let totalFloors = coreDataManager.fetchTotalFloors(),
               let totalSlotsPerFloor = coreDataManager.fetchTotalSlotsPerFloor() else {
             print("Error: Total floors or slots per floor not set.")
@@ -42,22 +48,43 @@ class ParkingManager {
         // Create and persist the parking slot entry
         let context = coreDataManager.context
         let slot = ParkingSlotData(context: context)
+        slot.id = UUID()
         slot.name = name
         slot.slotNumber = slotNumber
-        slot.id = UUID()
         slot.timeDurationInHour = timeDurationInHour
         slot.startingTime = startingTime
         slot.vehicleNumber = vehicleNumber
         
+        // New fields: default to "approved" and payment = true ---- cz when we enter manually u need it in manage slot; having it in transaction slot and than you need to approve your request would be a bit wanky thing to do
+        slot.transactionStatus = "approved"
+        slot.isPaymentDone = true
+        
         coreDataManager.saveContext()
     }
     
+    // Remove a slot by slot number
     func removeParkingSlot(bySlotNumber slotNumber: String) {
         coreDataManager.removeParkingSlot(bySlotNumber: slotNumber)
     }
     
+    // Called if floors/slots are reconfigured
     func deleteOutOfRangeSlotsForConfiguration(totalFloors: Int16, slotsPerFloor: Int16) {
         coreDataManager.deleteOutOfRangeSlots(totalFloors: totalFloors, slotsPerFloor: slotsPerFloor)
     }
-
+    
+    // Example methods for changing transaction status / payment
+    func approveSlot(_ slot: ParkingSlotData) {
+        slot.transactionStatus = "approved"
+        coreDataManager.saveContext()
+    }
+    
+    func markSlotAsPaid(_ slot: ParkingSlotData) {
+        slot.isPaymentDone = true
+        coreDataManager.saveContext()
+    }
+    
+    func rejectSlot(_ slot: ParkingSlotData) {
+        // e.g. delete the slot
+        coreDataManager.deleteParkingSlot(slot: slot)
+    }
 }

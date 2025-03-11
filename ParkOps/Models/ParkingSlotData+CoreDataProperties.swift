@@ -23,6 +23,10 @@ extension ParkingSlotData {
     @NSManaged public var vehicleNumber: String
     @NSManaged public var id: UUID
     @NSManaged public var parkingSlot: ParkingSlot?
+    // for transaction screen
+    @NSManaged public var transactionStatus: String
+    @NSManaged public var isPaymentDone: Bool
+
 
 }
 

@@ -162,7 +162,7 @@
                                     <button opaque="NO" contentMode="scaleToFill" verticalHuggingPriority="252" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yr4-e1-GOF">
                                         <rect key="frame" x="0.0" y="43.333333333333314" width="363" height="34.333333333333343"/>
                                         <state key="normal" title="Button"/>
-                                        <buttonConfiguration key="configuration" style="filled" title="Recent Bookings" cornerStyle="capsule">
+                                        <buttonConfiguration key="configuration" style="filled" title="Transaction management" cornerStyle="capsule">
                                             <color key="baseBackgroundColor" systemColor="systemRedColor"/>
                                         </buttonConfiguration>
                                         <connections>
@@ -247,10 +247,10 @@
             </objects>
             <point key="canvasLocation" x="2988.5496183206105" y="7.746478873239437"/>
         </scene>
-        <!--Booking Management-->
+        <!--Transaction Management-->
         <scene sceneID="bmu-TB-D9r">
             <objects>
-                <viewController id="YLR-YC-Te1" sceneMemberID="viewController">
+                <viewController id="YLR-YC-Te1" customClass="TransactionManagementViewController" customModule="ParkOps" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="ZJq-JT-e9I">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -266,6 +266,7 @@
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="deleteSlot:" destination="aLk-bP-s6L" eventType="touchUpInside" id="GCe-5D-cxX"/>
+                                            <action selector="filterByDateTapped:" destination="YLR-YC-Te1" eventType="touchUpInside" id="4eV-rA-DOM"/>
                                             <action selector="logEntryTapped:" destination="KcQ-oU-bNy" eventType="touchUpInside" id="H5O-85-qmW"/>
                                         </connections>
                                     </button>
@@ -277,6 +278,7 @@
                                         </buttonConfiguration>
                                         <connections>
                                             <action selector="deleteSlot:" destination="aLk-bP-s6L" eventType="touchUpInside" id="Y3o-Xy-SDp"/>
+                                            <action selector="filterByStatusTapped:" destination="YLR-YC-Te1" eventType="touchUpInside" id="B2D-Ki-6jC"/>
                                             <action selector="logEntryTapped:" destination="KcQ-oU-bNy" eventType="touchUpInside" id="jH4-1X-gne"/>
                                         </connections>
                                     </button>
@@ -299,7 +301,12 @@
                             <constraint firstItem="gIk-4C-rz6" firstAttribute="bottom" secondItem="dS6-u7-mAR" secondAttribute="bottom" id="w8i-nr-pI2"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" title="Booking Management" id="ox8-p7-w8H"/>
+                    <navigationItem key="navigationItem" title="Transaction Management" id="ox8-p7-w8H"/>
+                    <connections>
+                        <outlet property="filterByDateButton" destination="kaO-OT-pJH" id="Xqi-tX-oky"/>
+                        <outlet property="filterByStatusButton" destination="Ixe-6y-kAi" id="Cy1-k2-h82"/>
+                        <outlet property="tableView" destination="dS6-u7-mAR" id="MKu-xL-RQZ"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Z0l-vn-JlV" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
