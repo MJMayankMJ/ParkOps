@@ -193,7 +193,7 @@ extension ParkingViewController {
             
             print("No pending transactions found. Creating dummy data...")
             
-            //10 dummy data
+            // Create 10 dummy records
             for i in 1...10 {
                 let slot = ParkingSlotData(context: context)
                 
@@ -202,9 +202,12 @@ extension ParkingViewController {
                 slot.name = "Driver \(i)"
                 slot.slotNumber = "A\(i)"
                 slot.timeDurationInHour = Int16(2 + i)
-                slot.startingTime = Date()
-                slot.vehicleNumber = "ABC-123\(i)"
                 
+                // Generate a random time interval between 30 minutes and 4 hours
+                let randomInterval = TimeInterval(Int.random(in: 1800...14400))
+                slot.startingTime = Date().addingTimeInterval(randomInterval)
+                
+                slot.vehicleNumber = "ABC-123\(i)"
                 slot.transactionStatus = "pending"
                 slot.isPaymentDone = (i <= 5)
             }
@@ -218,5 +221,4 @@ extension ParkingViewController {
             print("Error checking or creating dummy data: \(error)")
         }
     }
-
 }

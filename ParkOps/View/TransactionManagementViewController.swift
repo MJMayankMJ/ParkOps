@@ -6,15 +6,17 @@
 //
 
 import UIKit
+import CoreData
+
+
 
 class TransactionManagementViewController: UIViewController {
 
-    // MARK: - IBOutlets
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var filterByDateButton: UIButton!
     @IBOutlet weak var filterByStatusButton: UIButton!
     
-    // Data source
+    // Data source: Initially fetched using your custom method
     private var transactions: [ParkingSlotData] = []
     
     override func viewDidLoad() {
@@ -22,42 +24,85 @@ class TransactionManagementViewController: UIViewController {
         
         title = "Transaction Management"
         
-        // Table View Setup
         tableView.dataSource = self
         tableView.delegate = self
         
-        // Register the custom cell (if using a nib file)
-        tableView.register(UINib(nibName: "RecentSlotBookingCell", bundle: nil),
-                           forCellReuseIdentifier: "RecentSlotBookingCell")
+        tableView.register(UINib(nibName: "RecentSlotBookingCell", bundle: nil),forCellReuseIdentifier: "RecentSlotBookingCell")
         
-        // Initial fetch
         fetchTransactions()
     }
     
     // MARK: - Fetch Data
     private func fetchTransactions() {
-        // Using the method that returns everything not (approved && paid)
         transactions = CoreDataManager.shared.fetchSlotsForTransactionManagement()
         tableView.reloadData()
     }
     
-    // MARK: - IBActions
+    // Filter by Date:
+    // Sort the transactions so that the one with the earliest startingTime comes first.
     @IBAction func filterByDateTapped(_ sender: UIButton) {
-        // Optional: Implement date-based filtering
-        print("Filter by Date tapped")
+        transactions.sort { (slot1, slot2) -> Bool in
+            if let t1 = slot1.startingTime, let t2 = slot2.startingTime {
+                return t1 < t2
+            }
+            else if slot1.startingTime != nil {
+                return true
+            } else {
+                return false
+            }
+        }
+        tableView.reloadData()
     }
     
+    // Filter by Status:
+    // Sort the transactions so that "pending" records come first.
+    // If two records have the same status, sort by startingTime.
     @IBAction func filterByStatusTapped(_ sender: UIButton) {
-        // Optional: Implement status-based filtering
-        print("Filter by Status tapped")
+        transactions.sort { (slot1, slot2) -> Bool in
+            let status1 = slot1.transactionStatus.lowercased()
+            let status2 = slot2.transactionStatus.lowercased()
+            
+            if status1 == status2 {
+                if status1 == "pending" {
+                    if slot1.isPaymentDone != slot2.isPaymentDone {
+                        return slot1.isPaymentDone && !slot2.isPaymentDone
+                    } else {
+                        if let t1 = slot1.startingTime, let t2 = slot2.startingTime {
+                            return t1 < t2
+                        } else if slot1.startingTime != nil {
+                            return true
+                        } else {
+                            return false
+                        }
+                    }
+                } else {
+                    if let t1 = slot1.startingTime, let t2 = slot2.startingTime {
+                        return t1 < t2
+                    } else if slot1.startingTime != nil {
+                        return true
+                    } else {
+                        return false
+                    }
+                }
+            } else {
+                if status1 == "pending" {
+                    return true
+                } else if status2 == "pending" {
+                    return false
+                } else {
+                    return status1 < status2
+                }
+            }
+        }
+        tableView.reloadData()
     }
+
 }
 
 // MARK: - UITableViewDataSource
 extension TransactionManagementViewController: UITableViewDataSource {
 
-    func tableView(_ tableView: UITableView,
-                   numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return transactions.count
     }
     
@@ -78,36 +123,29 @@ extension TransactionManagementViewController: UITableViewDataSource {
     }
 }
 
-// MARK: - UITableViewDelegate (Optional)
+// MARK: - UITableViewDelegate
 extension TransactionManagementViewController: UITableViewDelegate {
-    // e.g. didSelectRowAt, if needed
+    // ......
 }
 
 // MARK: - RecentSlotBookingCellDelegate
 extension TransactionManagementViewController: RecentSlotBookingCellDelegate {
     
     func didTapApprove(on slot: ParkingSlotData) {
-        // Mark as approved, optionally mark as paid
         slot.transactionStatus = "approved"
-        // slot.isPaymentDone = true  // to move to Manage Slots immediately
         
         CoreDataManager.shared.saveContext()
-        // Refresh the list so that if it's (approved && paid), it disappears from here
         fetchTransactions()
-        print("tapped on aprrove button")
+        print("Approve tapped")
     }
     
     func didTapCancel(on slot: ParkingSlotData) {
-        // e.g. remove from DB or mark as "rejected"
-        // Here, let's just delete it
         CoreDataManager.shared.deleteParkingSlot(slot: slot)
-        
-        // Refresh
         fetchTransactions()
-        print("tapped on cancel button")
+        print("Cancel tapped")
     }
     
     func didTapModify(on slot: ParkingSlotData) {
-        // Not implemented for now
+        // Modify logic can be implemented later.
     }
 }

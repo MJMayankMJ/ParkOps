@@ -26,14 +26,12 @@ class RecentSlotBookingCell: UITableViewCell {
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var modifyButton: UIButton!
     
-    // 2. Delegate reference
     weak var delegate: RecentSlotBookingCellDelegate?
     
-    // Keep a reference to the current slot data so we can pass it when buttons are tapped.
+    // a reference to the current slot data so we can pass it when buttons are tapped.
     private var currentSlotData: ParkingSlotData?
     
     
-    // Called after the cell is loaded from the storyboard
     override func awakeFromNib() {
         super.awakeFromNib()
     }
@@ -45,7 +43,7 @@ class RecentSlotBookingCell: UITableViewCell {
     }
     
     // MARK: - Configure Cell
-    // Call this method to populate the cell's labels/buttons with data from ParkingSlotData
+    // to populate the cell's labels/buttons with data from ParkingSlotData
     
     func configure(with slotData: ParkingSlotData) {
         // Store the data in currentSlotData so the button taps can access it
@@ -77,7 +75,6 @@ class RecentSlotBookingCell: UITableViewCell {
     // MARK: - IBActions
     @IBAction func approveButtonTapped(_ sender: UIButton) {
         guard let slot = currentSlotData else { return }
-        // 3. Notify the delegate instead of handling logic here
         delegate?.didTapApprove(on: slot)
     }
     
