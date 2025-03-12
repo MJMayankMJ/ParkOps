@@ -39,13 +39,84 @@ class CoreDataManager {
     
     // eg: fetch slots for "Transaction Management"
     // showing anything that is NOT (approved && paid)
-    func fetchSlotsForTransactionManagement() -> [ParkingSlotData] {
+//    func fetchSlotsForTransactionManagement() -> [ParkingSlotData] {
+//        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+//        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+//            NSPredicate(format: "transactionStatus != %@", "approved"),
+//            NSPredicate(format: "isPaymentDone == NO")
+//        ])
+//        request.predicate = predicate
+//        
+//        do {
+//            let results = try context.fetch(request)
+//            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+//        } catch {
+//            print("Failed to fetch transaction management slots: \(error)")
+//            return []
+//        }
+//    }
+//    
+//    // eg: fetch slots for "Manage Slots"
+//    // showing only (approved && paid).
+//    func fetchSlotsForManageSlots() -> [ParkingSlotData] {
+//        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+//        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+//            NSPredicate(format: "transactionStatus == %@", "approved"),
+//            NSPredicate(format: "isPaymentDone == YES")
+//        ])
+//        request.predicate = predicate
+//        
+//        do {
+//            let results = try context.fetch(request)
+//            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+//        } catch {
+//            print("Failed to fetch manage slots: \(error)")
+//            return []
+//        }
+//    }
+    
+    // Fetch slots for "Manage Slots": approved and paid only.
+    func fetchSlotsForManageSlots() -> [ParkingSlotData] {
         let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
-        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-            NSPredicate(format: "transactionStatus != %@", "approved"),
-            NSPredicate(format: "isPaymentDone == NO")
+        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "transactionStatus == %@", "approved"),
+            NSPredicate(format: "isPaymentDone == YES")
         ])
         request.predicate = predicate
+
+        do {
+            let results = try context.fetch(request)
+            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
+        } catch {
+            print("Failed to fetch manage slots: \(error)")
+            return []
+        }
+    }
+
+    // Fetch slots for "Transaction Management": show everything that is NOT (approved and paid)
+    // and explicitly exclude rejected records.
+    func fetchSlotsForTransactionManagement() -> [ParkingSlotData] {
+        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
+        
+        // Create a predicate for (approved AND paid)
+        let approvedAndPaidPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            NSPredicate(format: "transactionStatus == %@", "approved"),
+            NSPredicate(format: "isPaymentDone == YES")
+        ])
+        
+        // We want records that do NOT match (approved AND paid)
+        let notApprovedAndPaidPredicate = NSCompoundPredicate(notPredicateWithSubpredicate: approvedAndPaidPredicate)
+        
+        // Also, we want to exclude any record with transactionStatus == "rejected"
+        let notRejectedPredicate = NSPredicate(format: "transactionStatus != %@", "rejected")
+        
+        // Final predicate: NOT (approved AND paid) AND (not rejected)
+        let finalPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            notApprovedAndPaidPredicate,
+            notRejectedPredicate
+        ])
+        
+        request.predicate = finalPredicate
         
         do {
             let results = try context.fetch(request)
@@ -55,25 +126,7 @@ class CoreDataManager {
             return []
         }
     }
-    
-    // eg: fetch slots for "Manage Slots"
-    // showing only (approved && paid).
-    func fetchSlotsForManageSlots() -> [ParkingSlotData] {
-        let request: NSFetchRequest<ParkingSlotData> = ParkingSlotData.fetchRequest()
-        let predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
-            NSPredicate(format: "transactionStatus == %@", "approved"),
-            NSPredicate(format: "isPaymentDone == YES")
-        ])
-        request.predicate = predicate
-        
-        do {
-            let results = try context.fetch(request)
-            return results.sorted { compareSlotNumbers($0.slotNumber, $1.slotNumber) }
-        } catch {
-            print("Failed to fetch manage slots: \(error)")
-            return []
-        }
-    }
+
     
     // Helper to compare alphanumeric slot numbers (e.g. A10 < B5).
     private func compareSlotNumbers(_ slot1: String?, _ slot2: String?) -> Bool {

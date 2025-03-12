@@ -20,33 +20,35 @@ class TransactionManagementViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.title = "Transaction Management"
+        title = "Transaction Management"
         
-        // Set table view dataSource & delegate
+        // Table View Setup
         tableView.dataSource = self
         tableView.delegate = self
-        tableView.register(UINib(nibName: "RecentSlotBookingCell", bundle: nil), forCellReuseIdentifier: "RecentSlotBookingCell")
         
-        // Fetch initial data
+        // Register the custom cell (if using a nib file)
+        tableView.register(UINib(nibName: "RecentSlotBookingCell", bundle: nil),
+                           forCellReuseIdentifier: "RecentSlotBookingCell")
+        
+        // Initial fetch
         fetchTransactions()
     }
     
     // MARK: - Fetch Data
     private func fetchTransactions() {
-        // Using the method from your CoreDataManager that returns
-        // everything that is NOT (approved && paid).
+        // Using the method that returns everything not (approved && paid)
         transactions = CoreDataManager.shared.fetchSlotsForTransactionManagement()
         tableView.reloadData()
     }
     
     // MARK: - IBActions
     @IBAction func filterByDateTapped(_ sender: UIButton) {
-        // Implement date-based filtering if desired
+        // Optional: Implement date-based filtering
         print("Filter by Date tapped")
     }
     
     @IBAction func filterByStatusTapped(_ sender: UIButton) {
-        // Implement status-based filtering if desired
+        // Optional: Implement status-based filtering
         print("Filter by Status tapped")
     }
 }
@@ -54,7 +56,8 @@ class TransactionManagementViewController: UIViewController {
 // MARK: - UITableViewDataSource
 extension TransactionManagementViewController: UITableViewDataSource {
 
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView,
+                   numberOfRowsInSection section: Int) -> Int {
         return transactions.count
     }
     
@@ -70,63 +73,41 @@ extension TransactionManagementViewController: UITableViewDataSource {
         
         let slotData = transactions[indexPath.row]
         cell.configure(with: slotData)
-        
-        // Set the cell's delegate to self
         cell.delegate = self
-        
         return cell
     }
 }
 
 // MARK: - UITableViewDelegate (Optional)
 extension TransactionManagementViewController: UITableViewDelegate {
-    // e.g., didSelectRowAt if needed
+    // e.g. didSelectRowAt, if needed
 }
 
 // MARK: - RecentSlotBookingCellDelegate
 extension TransactionManagementViewController: RecentSlotBookingCellDelegate {
     
-    /// Called when user taps Approve in the cell
     func didTapApprove(on slot: ParkingSlotData) {
-        // Example logic: Mark transaction as approved
+        // Mark as approved, optionally mark as paid
         slot.transactionStatus = "approved"
+        // slot.isPaymentDone = true  // to move to Manage Slots immediately
         
-        // If you also want to mark it as paid at the same time, do:
-        // slot.isPaymentDone = true
-        
-        // Save the changes
         CoreDataManager.shared.saveContext()
-        
-        // Re-fetch so that if it's now (approved && paid), it moves to Manage Slots
+        // Refresh the list so that if it's (approved && paid), it disappears from here
         fetchTransactions()
+        print("tapped on aprrove button")
     }
     
-    /// Called when user taps Cancel in the cell
     func didTapCancel(on slot: ParkingSlotData) {
-        // Example logic: we can either mark as "cancelled" or remove it from the DB
-        // Let's delete the record entirely:
+        // e.g. remove from DB or mark as "rejected"
+        // Here, let's just delete it
         CoreDataManager.shared.deleteParkingSlot(slot: slot)
         
-        // Re-fetch
+        // Refresh
         fetchTransactions()
+        print("tapped on cancel button")
     }
     
-    /// Called when user taps Modify in the cell
     func didTapModify(on slot: ParkingSlotData) {
-        // For example, present an alert or a screen to modify the slot details
-        // We'll do a simple example changing the slot number
-        let alert = UIAlertController(title: "Modify Slot", message: "Enter new slot number:", preferredStyle: .alert)
-        alert.addTextField { textField in
-            textField.placeholder = "e.g. A10"
-        }
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        alert.addAction(UIAlertAction(title: "Save", style: .default, handler: { _ in
-            if let newSlotNumber = alert.textFields?.first?.text, !newSlotNumber.isEmpty {
-                slot.slotNumber = newSlotNumber
-                CoreDataManager.shared.saveContext()
-                self.fetchTransactions()
-            }
-        }))
-        present(alert, animated: true)
+        // Not implemented for now
     }
 }

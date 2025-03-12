@@ -46,14 +46,18 @@ class RecentSlotBookingCell: UITableViewCell {
     
     // MARK: - Configure Cell
     // Call this method to populate the cell's labels/buttons with data from ParkingSlotData
+    
     func configure(with slotData: ParkingSlotData) {
+        // Store the data in currentSlotData so the button taps can access it
+        currentSlotData = slotData
+        
         // Name
         nameLabel.text = slotData.name
         
-        // Time (format if needed)
+        // Time
         if let startTime = slotData.startingTime {
             let formatter = DateFormatter()
-            formatter.dateFormat = "hh:mm a" // e.g. "10:00 AM"
+            formatter.dateFormat = "hh:mm a"
             timeLabel.text = "Time: \(formatter.string(from: startTime))"
         } else {
             timeLabel.text = "Time: N/A"
@@ -65,9 +69,10 @@ class RecentSlotBookingCell: UITableViewCell {
         // Slot
         slotLabel.text = "Slot: \(slotData.slotNumber)"
         
-        // Payment Status ✅ / ❌
+        // Payment Status
         paymentstatusLabel.text = slotData.isPaymentDone ? "Payment: ✅" : "Payment: ❌"
     }
+
     
     // MARK: - IBActions
     @IBAction func approveButtonTapped(_ sender: UIButton) {

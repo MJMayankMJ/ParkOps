@@ -29,7 +29,7 @@ class ManageParkingViewController: UIViewController, UITableViewDelegate {
     }
     
     func fetchParkingSlots() {
-        parkingSlots = CoreDataManager.shared.fetchAllParkingSlots().sorted {
+        parkingSlots = CoreDataManager.shared.fetchSlotsForManageSlots().sorted {
             sortAlphanumeric($0.slotNumber, $1.slotNumber)
         }
         tableView.reloadData()
