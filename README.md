@@ -1,5 +1,8 @@
 # ParkOps
 
+![ParkOps2](https://github.com/user-attachments/assets/de14208f-a83b-4465-93fc-9d36112d4f38)
+
+
 ParkOps is an iOS app built with UIKit and Core Data for managing parking  slot bookings and transactions for admins. The app features two main screens:
 - **Transaction Management:** View, approve, and cancel pending or incomplete transactions.
 - **Manage Parking:** Display confirmed parking slots (approved and paid).
